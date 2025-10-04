@@ -2,6 +2,7 @@
 
 import { useEffect } from 'react';
 import Calendar from './components/Calendar';
+import CountdownSection from './components/CountdownSection';
 import { ScheduleEntry, TOTAL_SEASONS, DAYS_PER_SEASON, CHANNELS_PER_SEASON } from './types';
 import { useLocalStorage } from './hooks/useLocalStorage';
 import { generateSeasonSchedule } from './utils/schedule';
@@ -25,6 +26,12 @@ export default function Home() {
     );
   };
 
+  const handleReset = () => {
+    if (confirm('Are you sure you want to reset all progress?')) {
+      setScheduleEntries([]);
+    }
+  };
+
   // Calculate stats
   const totalDays = TOTAL_SEASONS * DAYS_PER_SEASON;
   const totalChannels = TOTAL_SEASONS * CHANNELS_PER_SEASON;
@@ -43,10 +50,20 @@ export default function Home() {
     <div className="min-h-screen p-4 sm:p-8">
       <div className="w-full">
         <header className="glass-container mb-8">
-          <h1 className="text-5xl font-bold mb-3 text-white">YouTube Social Scheduler</h1>
-          <p className="text-lg text-gray-200">
-            Season-based scheduling system: <span className="font-bold text-blue-300">{TOTAL_SEASONS} seasons</span> × <span className="font-bold text-green-300">{DAYS_PER_SEASON} days</span> × <span className="font-bold text-purple-300">{CHANNELS_PER_SEASON} channels</span>
-          </p>
+          <div className="flex justify-between items-start">
+            <div>
+              <h1 className="text-5xl font-bold mb-3 text-white">YouTube Social Scheduler</h1>
+              <p className="text-lg text-gray-200">
+                Season-based scheduling system: <span className="font-bold text-blue-300">{TOTAL_SEASONS} seasons</span> × <span className="font-bold text-green-300">{DAYS_PER_SEASON} days</span> × <span className="font-bold text-purple-300">{CHANNELS_PER_SEASON} channels</span>
+              </p>
+            </div>
+            <button
+              onClick={handleReset}
+              className="glass-btn bg-red-600/20 border-red-400 hover:bg-red-600/30 px-4 py-2"
+            >
+              Reset All
+            </button>
+          </div>
         </header>
 
         {/* Stats Dashboard */}
@@ -79,6 +96,8 @@ export default function Home() {
           scheduleEntries={scheduleEntries}
           onToggleComplete={handleToggleComplete}
         />
+
+        <CountdownSection />
       </div>
     </div>
   );
