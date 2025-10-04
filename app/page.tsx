@@ -3,32 +3,32 @@
 import { useEffect } from 'react';
 import Calendar from './components/Calendar';
 import CountdownSection from './components/CountdownSection';
-import { ScheduleEntry, TOTAL_SEASONS, DAYS_PER_SEASON, CHANNELS_PER_SEASON } from './types';
-import { useLocalStorage } from './hooks/useLocalStorage';
+import { TOTAL_SEASONS, DAYS_PER_SEASON, CHANNELS_PER_SEASON } from './types';
+import { useFirebaseSchedule } from './hooks/useFirebaseSchedule';
 import { generateSeasonSchedule } from './utils/schedule';
 
 export default function Home() {
-  const [scheduleEntries, setScheduleEntries, entriesLoaded] = useLocalStorage<ScheduleEntry[]>('yt-scheduler-entries', []);
+  const { scheduleEntries, setScheduleEntries, isLoading, error } = useFirebaseSchedule();
 
   // Initialize schedule on first load
   useEffect(() => {
-    if (entriesLoaded && scheduleEntries.length === 0) {
+    if (!isLoading && scheduleEntries.length === 0) {
       const newSchedule = generateSeasonSchedule();
       setScheduleEntries(newSchedule);
     }
-  }, [entriesLoaded, scheduleEntries.length, setScheduleEntries]);
+  }, [isLoading, scheduleEntries.length, setScheduleEntries]);
 
   const handleToggleComplete = (entryId: string) => {
-    setScheduleEntries(
-      scheduleEntries.map(e =>
-        e.id === entryId ? { ...e, completed: !e.completed } : e
-      )
+    const updatedEntries = scheduleEntries.map(e =>
+      e.id === entryId ? { ...e, completed: !e.completed } : e
     );
+    setScheduleEntries(updatedEntries);
   };
 
-  const handleReset = () => {
+  const handleReset = async () => {
     if (confirm('Are you sure you want to reset all progress?')) {
-      setScheduleEntries([]);
+      const newSchedule = generateSeasonSchedule();
+      await setScheduleEntries(newSchedule);
     }
   };
 
@@ -38,10 +38,18 @@ export default function Home() {
   const completedEntries = scheduleEntries.filter(e => e.completed).length;
   const totalEntries = scheduleEntries.length;
 
-  if (!entriesLoaded) {
+  if (isLoading) {
     return (
       <div className="min-h-screen flex items-center justify-center">
         <div className="text-lg text-white">Loading...</div>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="text-lg text-red-400">Error loading schedule. Please check your Firebase configuration.</div>
       </div>
     );
   }
@@ -52,7 +60,7 @@ export default function Home() {
         <header className="glass-container mb-8">
           <div className="flex justify-between items-start">
             <div>
-              <h1 className="text-5xl font-bold mb-3 text-white">YouTube Social Scheduler</h1>
+              <h1 className="text-5xl font-bold mb-3 text-white">Social Scheduler</h1>
               <p className="text-lg text-gray-200">
                 Season-based scheduling system: <span className="font-bold text-blue-300">{TOTAL_SEASONS} seasons</span> × <span className="font-bold text-green-300">{DAYS_PER_SEASON} days</span> × <span className="font-bold text-purple-300">{CHANNELS_PER_SEASON} channels</span>
               </p>

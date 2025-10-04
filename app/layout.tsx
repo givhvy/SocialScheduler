@@ -13,8 +13,8 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "YouTube Social Scheduler",
-  description: "Manage your YouTube upload schedule across multiple channels",
+  title: "Social Scheduler",
+  description: "Manage your social media schedule across multiple channels",
 };
 
 export default function RootLayout({
