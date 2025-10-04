@@ -6,7 +6,8 @@ import {
   setDoc,
   getDocs,
   writeBatch,
-  serverTimestamp
+  serverTimestamp,
+  onSnapshot
 } from 'firebase/firestore';
 import { ScheduleEntry, TOTAL_SEASONS } from '@/app/types';
 
@@ -119,4 +120,34 @@ export async function updateEntryCompletion(
     console.error('Error updating entry:', error);
     throw error;
   }
+}
+
+/**
+ * Subscribe to realtime updates from Firebase
+ */
+export function subscribeToScheduleUpdates(
+  callback: (entries: ScheduleEntry[]) => void
+): () => void {
+  const unsubscribers: Array<() => void> = [];
+
+  // Subscribe to all 12 season documents
+  for (let i = 1; i <= TOTAL_SEASONS; i++) {
+    const docRef = doc(db, COLLECTION_NAME, `season-${i}`);
+    const unsubscribe = onSnapshot(
+      docRef,
+      (docSnap) => {
+        // When any season updates, reload all entries
+        loadScheduleEntries().then(callback);
+      },
+      (error) => {
+        console.error(`Error listening to season-${i}:`, error);
+      }
+    );
+    unsubscribers.push(unsubscribe);
+  }
+
+  // Return cleanup function
+  return () => {
+    unsubscribers.forEach(unsub => unsub());
+  };
 }
