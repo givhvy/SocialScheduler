@@ -1,26 +1,88 @@
 @import "tailwindcss";
 
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
-}
-
-@theme inline {
+  --background: #0f172a;
+  --foreground: #ffffff;
   --color-background: var(--background);
   --color-foreground: var(--foreground);
   --font-sans: var(--font-geist-sans);
   --font-mono: var(--font-geist-mono);
+  --glass-blur: 16px;
+  --glass-bg: rgba(30, 41, 59, 0.6);
+  --glass-border: rgba(148, 163, 184, 0.15);
+  --glass-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.5);
+  --glass-radius: 16px;
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
+* {
+  box-sizing: border-box;
+}
+
+html {
+  background: #0f172a;
 }
 
 body {
-  background: var(--background);
+  background: linear-gradient(135deg, #0f172a 0%, #1e293b 50%, #334155 100%);
+  background-attachment: fixed;
   color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  min-height: 100vh;
+  margin: 0;
+  font-family: var(--font-sans);
+}
+
+.glass-container {
+  background: rgba(30, 41, 59, 0.6);
+  backdrop-filter: blur(16px) saturate(150%);
+  -webkit-backdrop-filter: blur(16px) saturate(150%);
+  border-radius: var(--glass-radius);
+  border: 1px solid rgba(148, 163, 184, 0.15);
+  box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.5);
+  padding: 1.5rem;
+}
+
+.glass-card {
+  background: rgba(51, 65, 85, 0.5);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border-radius: 12px;
+  border: 1px solid rgba(148, 163, 184, 0.2);
+  box-shadow: 0 4px 16px 0 rgba(0, 0, 0, 0.3);
+  padding: 1.2rem;
+  transition: all 0.2s ease;
+}
+
+.glass-card:hover {
+  background: rgba(51, 65, 85, 0.7);
+  box-shadow: 0 8px 24px 0 rgba(0, 0, 0, 0.4);
+  transform: translateY(-2px);
+}
+
+.glass-btn {
+  padding: 0.6em 1.2em;
+  background: rgba(59, 130, 246, 0.8);
+  backdrop-filter: blur(8px);
+  color: #ffffff;
+  border: 1px solid rgba(96, 165, 250, 0.3);
+  border-radius: 8px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.glass-btn:hover {
+  background: rgba(37, 99, 235, 0.9);
+  box-shadow: 0 4px 12px rgba(59, 130, 246, 0.4);
+}
+
+.glass-btn:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+.glass-bar {
+  background: rgba(30, 41, 59, 0.4);
+  backdrop-filter: blur(8px);
+  border-radius: 12px;
+  padding: 0.5rem;
 }
