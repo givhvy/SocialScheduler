@@ -123,31 +123,45 @@ export async function updateEntryCompletion(
 }
 
 /**
- * Subscribe to realtime updates from Firebase
+ * Save only one season (optimized for single entry updates)
  */
-export function subscribeToScheduleUpdates(
-  callback: (entries: ScheduleEntry[]) => void
-): () => void {
-  const unsubscribers: Array<() => void> = [];
-
-  // Subscribe to all 12 season documents
-  for (let i = 1; i <= TOTAL_SEASONS; i++) {
-    const docRef = doc(db, COLLECTION_NAME, `season-${i}`);
-    const unsubscribe = onSnapshot(
-      docRef,
-      (docSnap) => {
-        // When any season updates, reload all entries
-        loadScheduleEntries().then(callback);
-      },
-      (error) => {
-        console.error(`Error listening to season-${i}:`, error);
-      }
-    );
-    unsubscribers.push(unsubscribe);
+export async function saveSingleSeason(seasonNum: number, entries: ScheduleEntry[]): Promise<void> {
+  try {
+    const docRef = doc(db, COLLECTION_NAME, `season-${seasonNum}`);
+    await setDoc(docRef, {
+      seasonNumber: seasonNum,
+      entries,
+      updatedAt: serverTimestamp(),
+    });
+  } catch (error) {
+    console.error(`Error saving season-${seasonNum}:`, error);
+    throw error;
   }
+}
 
-  // Return cleanup function
-  return () => {
-    unsubscribers.forEach(unsub => unsub());
-  };
+/**
+ * Update a single entry quickly (saves only affected season)
+ */
+export async function updateSingleEntry(
+  entryId: string,
+  completed: boolean,
+  allEntries: ScheduleEntry[]
+): Promise<ScheduleEntry[]> {
+  // Get season from entry ID
+  const season = getSeasonFromEntryId(entryId);
+
+  // Update entry in memory
+  const updatedEntries = allEntries.map(e =>
+    e.id === entryId ? { ...e, completed } : e
+  );
+
+  // Get only entries for this season
+  const seasonEntries = updatedEntries.filter(e =>
+    getSeasonFromEntryId(e.id) === season
+  );
+
+  // Save only this season
+  await saveSingleSeason(season, seasonEntries);
+
+  return updatedEntries;
 }

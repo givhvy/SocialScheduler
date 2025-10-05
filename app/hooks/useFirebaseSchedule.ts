@@ -1,13 +1,11 @@
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect } from 'react';
 import { ScheduleEntry } from '../types';
-import { loadScheduleEntries, saveScheduleEntries } from '@/lib/firebaseService';
+import { loadScheduleEntries, saveScheduleEntries, updateSingleEntry } from '@/lib/firebaseService';
 
 export function useFirebaseSchedule() {
   const [scheduleEntries, setScheduleEntries] = useState<ScheduleEntry[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<Error | null>(null);
-  const saveTimeoutRef = useRef<NodeJS.Timeout | null>(null);
-  const pendingEntriesRef = useRef<ScheduleEntry[] | null>(null);
 
   // Load entries from Firebase on mount
   useEffect(() => {
@@ -31,48 +29,49 @@ export function useFirebaseSchedule() {
     loadEntries();
   }, []);
 
-  // Save entries to Firebase with debouncing
-  const updateScheduleEntries = (newEntries: ScheduleEntry[]) => {
-    // Immediate UI update (optimistic)
-    setScheduleEntries(newEntries);
-    pendingEntriesRef.current = newEntries;
-
-    // Clear existing timeout
-    if (saveTimeoutRef.current) {
-      clearTimeout(saveTimeoutRef.current);
+  // Save all entries (used for bulk operations)
+  const updateScheduleEntries = async (newEntries: ScheduleEntry[]) => {
+    try {
+      console.log('💾 Saving schedule to Firebase...');
+      const startTime = Date.now();
+      setScheduleEntries(newEntries);
+      await saveScheduleEntries(newEntries);
+      const saveTime = Date.now() - startTime;
+      console.log(`✅ Saved ${newEntries.length} entries in ${saveTime}ms`);
+    } catch (err) {
+      setError(err as Error);
+      console.error('❌ Failed to save schedule:', err);
+      throw err;
     }
-
-    // Debounce save to Firebase (wait 500ms after last change)
-    saveTimeoutRef.current = setTimeout(async () => {
-      const entriesToSave = pendingEntriesRef.current;
-      if (!entriesToSave) return;
-
-      try {
-        console.log('💾 Saving schedule to Firebase...');
-        const startTime = Date.now();
-        await saveScheduleEntries(entriesToSave);
-        const saveTime = Date.now() - startTime;
-        console.log(`✅ Saved ${entriesToSave.length} entries in ${saveTime}ms`);
-        pendingEntriesRef.current = null;
-      } catch (err) {
-        setError(err as Error);
-        console.error('❌ Failed to save schedule:', err);
-      }
-    }, 500);
   };
 
-  // Cleanup on unmount
-  useEffect(() => {
-    return () => {
-      if (saveTimeoutRef.current) {
-        clearTimeout(saveTimeoutRef.current);
-      }
-    };
-  }, []);
+  // Toggle single entry (optimized - saves only 1 season)
+  const toggleEntry = async (entryId: string) => {
+    const entry = scheduleEntries.find(e => e.id === entryId);
+    if (!entry) return;
+
+    try {
+      // Optimistic update
+      const optimisticEntries = scheduleEntries.map(e =>
+        e.id === entryId ? { ...e, completed: !e.completed } : e
+      );
+      setScheduleEntries(optimisticEntries);
+
+      // Save only affected season
+      const updatedEntries = await updateSingleEntry(entryId, !entry.completed, scheduleEntries);
+      setScheduleEntries(updatedEntries);
+    } catch (err) {
+      // Rollback on error
+      setScheduleEntries(scheduleEntries);
+      setError(err as Error);
+      console.error('❌ Failed to update entry:', err);
+    }
+  };
 
   return {
     scheduleEntries,
     setScheduleEntries: updateScheduleEntries,
+    toggleEntry,
     isLoading,
     error,
   };

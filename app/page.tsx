@@ -8,7 +8,7 @@ import { useFirebaseSchedule } from './hooks/useFirebaseSchedule';
 import { generateSeasonSchedule } from './utils/schedule';
 
 export default function Home() {
-  const { scheduleEntries, setScheduleEntries, isLoading, error } = useFirebaseSchedule();
+  const { scheduleEntries, setScheduleEntries, toggleEntry, isLoading, error } = useFirebaseSchedule();
 
   // Initialize schedule on first load
   useEffect(() => {
@@ -19,10 +19,7 @@ export default function Home() {
   }, [isLoading, scheduleEntries.length, setScheduleEntries]);
 
   const handleToggleComplete = (entryId: string) => {
-    const updatedEntries = scheduleEntries.map(e =>
-      e.id === entryId ? { ...e, completed: !e.completed } : e
-    );
-    setScheduleEntries(updatedEntries);
+    toggleEntry(entryId);
   };
 
 
