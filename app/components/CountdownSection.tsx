@@ -61,34 +61,34 @@ function CountdownBox({ title, daysCycle, storageKey }: CountdownBoxProps) {
 
   return (
     <div className="glass-card flex-1">
-      <h3 className="text-2xl font-bold text-white mb-6 text-center">{title}</h3>
+      <h3 className="text-2xl font-bold text-black mb-6 text-center">{title}</h3>
       <div className="grid grid-cols-4 gap-4">
         <div className="text-center">
-          <div className="bg-white/10 rounded-lg p-4 mb-2">
-            <div className="text-4xl font-bold text-blue-400">{timeLeft.days}</div>
+          <div className="bg-gray-100 rounded-lg p-4 mb-2">
+            <div className="text-4xl font-bold text-black">{timeLeft.days}</div>
           </div>
-          <div className="text-sm text-gray-300 font-medium">Ngày</div>
+          <div className="text-sm text-gray-600 font-medium">Ngày</div>
         </div>
         <div className="text-center">
-          <div className="bg-white/10 rounded-lg p-4 mb-2">
-            <div className="text-4xl font-bold text-green-400">{timeLeft.hours}</div>
+          <div className="bg-gray-100 rounded-lg p-4 mb-2">
+            <div className="text-4xl font-bold text-black">{timeLeft.hours}</div>
           </div>
-          <div className="text-sm text-gray-300 font-medium">Giờ</div>
+          <div className="text-sm text-gray-600 font-medium">Giờ</div>
         </div>
         <div className="text-center">
-          <div className="bg-white/10 rounded-lg p-4 mb-2">
-            <div className="text-4xl font-bold text-purple-400">{timeLeft.minutes}</div>
+          <div className="bg-gray-100 rounded-lg p-4 mb-2">
+            <div className="text-4xl font-bold text-black">{timeLeft.minutes}</div>
           </div>
-          <div className="text-sm text-gray-300 font-medium">Phút</div>
+          <div className="text-sm text-gray-600 font-medium">Phút</div>
         </div>
         <div className="text-center">
-          <div className="bg-white/10 rounded-lg p-4 mb-2">
-            <div className="text-4xl font-bold text-pink-400">{timeLeft.seconds}</div>
+          <div className="bg-gray-100 rounded-lg p-4 mb-2">
+            <div className="text-4xl font-bold text-black">{timeLeft.seconds}</div>
           </div>
-          <div className="text-sm text-gray-300 font-medium">Giây</div>
+          <div className="text-sm text-gray-600 font-medium">Giây</div>
         </div>
       </div>
-      <div className="mt-4 text-center text-sm text-gray-400">
+      <div className="mt-4 text-center text-sm text-gray-500">
         Reset mỗi {daysCycle} ngày
       </div>
     </div>
@@ -98,7 +98,7 @@ function CountdownBox({ title, daysCycle, storageKey }: CountdownBoxProps) {
 export default function CountdownSection() {
   return (
     <div className="mt-8 mb-8">
-      <h2 className="text-3xl font-bold text-white mb-6 text-center">Lịch Nhắc Nhở</h2>
+      <h2 className="text-3xl font-bold text-black mb-6 text-center">Lịch Nhắc Nhở</h2>
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         <CountdownBox
           title="🫡 Countdown Ngày Cắt Tóc"
