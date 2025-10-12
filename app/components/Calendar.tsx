@@ -1,7 +1,8 @@
 'use client';
 
 import { ScheduleEntry, getSeason, getChannelName, TOTAL_SEASONS, DAYS_PER_SEASON, CHANNELS_PER_SEASON } from '../types';
-import { useState } from 'react';
+import { useLocalStorage } from '../hooks/useLocalStorage';
+import { useEffect, useState } from 'react';
 
 interface CalendarProps {
   scheduleEntries: ScheduleEntry[];
@@ -12,9 +13,17 @@ export default function Calendar({
   scheduleEntries,
   onToggleComplete,
 }: CalendarProps) {
-  const [currentDay, setCurrentDay] = useState(1); // 1-480
-  const [currentPage, setCurrentPage] = useState(1); // Pagination for channels
+  const [currentDay, setCurrentDay, isDayLoaded] = useLocalStorage('calendar-current-day', 1);
+  const [currentPage, setCurrentPage, isPageLoaded] = useLocalStorage('calendar-current-page', 1);
+  const [isHydrated, setIsHydrated] = useState(false);
   const channelsPerPage = 12; // Display 12 channels per page
+
+  // Wait for both localStorage values to be loaded
+  useEffect(() => {
+    if (isDayLoaded && isPageLoaded) {
+      setIsHydrated(true);
+    }
+  }, [isDayLoaded, isPageLoaded]);
 
   const season = getSeason(currentDay);
   const allChannelIndexes = Array.from(
@@ -91,6 +100,17 @@ export default function Calendar({
       e => e.channelId === channelName && parseInt(e.date) === currentDay
     );
   };
+
+  // Show loading state while hydrating to prevent flash of default values
+  if (!isHydrated) {
+    return (
+      <div className="w-full">
+        <div className="glass-container p-6 mb-4 text-center text-gray-500">
+          Loading calendar...
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="w-full">
