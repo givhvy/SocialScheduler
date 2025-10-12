@@ -1,8 +1,7 @@
 'use client';
 
 import { ScheduleEntry, getSeason, getChannelName, TOTAL_SEASONS, DAYS_PER_SEASON, CHANNELS_PER_SEASON } from '../types';
-import { useLocalStorage } from '../hooks/useLocalStorage';
-import { useEffect, useState } from 'react';
+import { useFirebaseNavigation } from '../hooks/useFirebaseNavigation';
 
 interface CalendarProps {
   scheduleEntries: ScheduleEntry[];
@@ -13,17 +12,8 @@ export default function Calendar({
   scheduleEntries,
   onToggleComplete,
 }: CalendarProps) {
-  const [currentDay, setCurrentDay, isDayLoaded] = useLocalStorage('calendar-current-day', 1);
-  const [currentPage, setCurrentPage, isPageLoaded] = useLocalStorage('calendar-current-page', 1);
-  const [isHydrated, setIsHydrated] = useState(false);
+  const { currentDay, currentPage, setCurrentDay, setCurrentPage, isLoaded } = useFirebaseNavigation();
   const channelsPerPage = 12; // Display 12 channels per page
-
-  // Wait for both localStorage values to be loaded
-  useEffect(() => {
-    if (isDayLoaded && isPageLoaded) {
-      setIsHydrated(true);
-    }
-  }, [isDayLoaded, isPageLoaded]);
 
   const season = getSeason(currentDay);
   const allChannelIndexes = Array.from(
@@ -38,11 +28,15 @@ export default function Calendar({
   const channelIndexes = allChannelIndexes.slice(startIndex, endIndex);
 
   const previousDay = () => {
-    if (currentDay > 1) setCurrentDay(currentDay - 1);
+    if (currentDay > 1) {
+      setCurrentDay(currentDay - 1);
+    }
   };
 
   const nextDay = () => {
-    if (currentDay < TOTAL_SEASONS * DAYS_PER_SEASON) setCurrentDay(currentDay + 1);
+    if (currentDay < TOTAL_SEASONS * DAYS_PER_SEASON) {
+      setCurrentDay(currentDay + 1);
+    }
   };
 
   const goToDay = (day: number) => {
@@ -51,11 +45,15 @@ export default function Calendar({
   };
 
   const previousPage = () => {
-    if (currentPage > 1) setCurrentPage(currentPage - 1);
+    if (currentPage > 1) {
+      setCurrentPage(currentPage - 1);
+    }
   };
 
   const nextPage = () => {
-    if (currentPage < totalPages) setCurrentPage(currentPage + 1);
+    if (currentPage < totalPages) {
+      setCurrentPage(currentPage + 1);
+    }
   };
 
   const goToPage = (page: number) => {
@@ -101,8 +99,8 @@ export default function Calendar({
     );
   };
 
-  // Show loading state while hydrating to prevent flash of default values
-  if (!isHydrated) {
+  // Show loading state while loading from Firebase to prevent flash of default values
+  if (!isLoaded) {
     return (
       <div className="w-full">
         <div className="glass-container p-6 mb-4 text-center text-gray-500">

@@ -12,6 +12,8 @@ import {
 import { ScheduleEntry, TOTAL_SEASONS } from '@/app/types';
 
 const COLLECTION_NAME = 'schedules';
+const USER_PREFS_COLLECTION = 'userPreferences';
+const DEFAULT_USER_ID = 'default-user'; // For now, using single user. Can add auth later.
 
 /**
  * Get season number from entry ID (format: C123-day456)
@@ -164,4 +166,76 @@ export async function updateSingleEntry(
   await saveSingleSeason(season, seasonEntries);
 
   return updatedEntries;
+}
+
+/**
+ * User navigation preferences interface
+ */
+export interface UserNavigationPrefs {
+  currentDay: number;
+  currentPage: number;
+  updatedAt?: object;
+}
+
+/**
+ * Load user navigation preferences from Firebase
+ */
+export async function loadNavigationPrefs(): Promise<UserNavigationPrefs> {
+  try {
+    const docRef = doc(db, USER_PREFS_COLLECTION, DEFAULT_USER_ID);
+    const docSnap = await getDoc(docRef);
+
+    if (docSnap.exists()) {
+      const data = docSnap.data();
+      return {
+        currentDay: data.currentDay || 1,
+        currentPage: data.currentPage || 1,
+      };
+    }
+
+    // Return defaults if no prefs exist
+    return { currentDay: 1, currentPage: 1 };
+  } catch (error) {
+    console.error('Error loading navigation preferences:', error);
+    return { currentDay: 1, currentPage: 1 };
+  }
+}
+
+/**
+ * Save user navigation preferences to Firebase
+ */
+export async function saveNavigationPrefs(prefs: UserNavigationPrefs): Promise<void> {
+  try {
+    const docRef = doc(db, USER_PREFS_COLLECTION, DEFAULT_USER_ID);
+    await setDoc(docRef, {
+      ...prefs,
+      updatedAt: serverTimestamp(),
+    }, { merge: true }); // Use merge to only update changed fields
+  } catch (error) {
+    console.error('Error saving navigation preferences:', error);
+    throw error;
+  }
+}
+
+/**
+ * Subscribe to navigation preferences changes (for real-time sync)
+ */
+export function subscribeToNavigationPrefs(
+  callback: (prefs: UserNavigationPrefs) => void
+): () => void {
+  const docRef = doc(db, USER_PREFS_COLLECTION, DEFAULT_USER_ID);
+
+  const unsubscribe = onSnapshot(docRef, (docSnap) => {
+    if (docSnap.exists()) {
+      const data = docSnap.data();
+      callback({
+        currentDay: data.currentDay || 1,
+        currentPage: data.currentPage || 1,
+      });
+    }
+  }, (error) => {
+    console.error('Error subscribing to navigation preferences:', error);
+  });
+
+  return unsubscribe;
 }
