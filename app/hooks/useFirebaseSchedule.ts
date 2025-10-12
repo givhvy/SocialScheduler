@@ -1,13 +1,14 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { ScheduleEntry } from '../types';
-import { loadScheduleEntries, saveScheduleEntries, updateSingleEntry } from '@/lib/firebaseService';
+import { loadScheduleEntries, saveScheduleEntries, updateSingleEntry, subscribeToAllSeasons } from '@/lib/firebaseService';
 
 export function useFirebaseSchedule() {
   const [scheduleEntries, setScheduleEntries] = useState<ScheduleEntry[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<Error | null>(null);
+  const isFirstLoadRef = useRef(true);
 
-  // Load entries from Firebase on mount
+  // Load entries from Firebase and subscribe to real-time updates
   useEffect(() => {
     async function loadEntries() {
       try {
@@ -18,15 +19,31 @@ export function useFirebaseSchedule() {
         const loadTime = Date.now() - startTime;
         console.log(`✅ Loaded ${entries.length} entries in ${loadTime}ms`);
         setScheduleEntries(entries);
+        setIsLoading(false);
+        isFirstLoadRef.current = false;
       } catch (err) {
         setError(err as Error);
         console.error('❌ Failed to load schedule:', err);
-      } finally {
         setIsLoading(false);
       }
     }
 
     loadEntries();
+
+    // Subscribe to real-time updates after initial load
+    const unsubscribe = subscribeToAllSeasons((entries) => {
+      // Only update if this is not the first load (to avoid double-rendering)
+      if (!isFirstLoadRef.current) {
+        console.log('🔄 Real-time update received:', entries.length, 'entries');
+        setScheduleEntries(entries);
+      }
+    });
+
+    // Cleanup subscription on unmount
+    return () => {
+      console.log('🛑 Unsubscribing from real-time updates');
+      unsubscribe();
+    };
   }, []);
 
   // Save all entries (used for bulk operations)
@@ -51,15 +68,15 @@ export function useFirebaseSchedule() {
     if (!entry) return;
 
     try {
-      // Optimistic update
+      // Optimistic update (for immediate UI feedback)
       const optimisticEntries = scheduleEntries.map(e =>
         e.id === entryId ? { ...e, completed: !e.completed } : e
       );
       setScheduleEntries(optimisticEntries);
 
-      // Save only affected season
-      const updatedEntries = await updateSingleEntry(entryId, !entry.completed, scheduleEntries);
-      setScheduleEntries(updatedEntries);
+      // Save only affected season (real-time listener will update all clients)
+      await updateSingleEntry(entryId, !entry.completed, scheduleEntries);
+      // Note: We don't manually update state here because the real-time listener will do it
     } catch (err) {
       // Rollback on error
       setScheduleEntries(scheduleEntries);

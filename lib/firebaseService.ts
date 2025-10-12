@@ -82,6 +82,48 @@ export async function loadScheduleEntries(): Promise<ScheduleEntry[]> {
 }
 
 /**
+ * Subscribe to real-time updates for all seasons
+ * This will trigger callback whenever any entry is updated
+ */
+export function subscribeToAllSeasons(
+  callback: (entries: ScheduleEntry[]) => void
+): () => void {
+  const unsubscribers: Array<() => void> = [];
+  const seasonEntries = new Map<number, ScheduleEntry[]>();
+
+  // Subscribe to all 12 seasons
+  for (let i = 1; i <= TOTAL_SEASONS; i++) {
+    const seasonNum = i;
+    const docRef = doc(db, COLLECTION_NAME, `season-${seasonNum}`);
+
+    const unsubscribe = onSnapshot(docRef, (docSnap) => {
+      if (docSnap.exists()) {
+        const data = docSnap.data();
+        if (data.entries && Array.isArray(data.entries)) {
+          seasonEntries.set(seasonNum, data.entries);
+
+          // Merge all season entries and trigger callback
+          const allEntries: ScheduleEntry[] = [];
+          seasonEntries.forEach((entries) => {
+            allEntries.push(...entries);
+          });
+          callback(allEntries);
+        }
+      }
+    }, (error) => {
+      console.error(`Error subscribing to season-${seasonNum}:`, error);
+    });
+
+    unsubscribers.push(unsubscribe);
+  }
+
+  // Return a function to unsubscribe from all seasons
+  return () => {
+    unsubscribers.forEach(unsub => unsub());
+  };
+}
+
+/**
  * Save schedule entries to Firebase (split by season)
  */
 export async function saveScheduleEntries(entries: ScheduleEntry[]): Promise<void> {
