@@ -144,11 +144,6 @@ export default function Settings({ isOpen, onClose }: SettingsProps) {
                       </button>
                     )}
                   </div>
-                  {currentSuffix && (
-                    <div className="mt-2 text-xs text-gray-500 bg-blue-50 px-2 py-1 rounded">
-                      Preview: C{channelNum}{currentSuffix}
-                    </div>
-                  )}
                 </div>
               );
             })}
