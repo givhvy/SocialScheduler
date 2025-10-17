@@ -18,6 +18,12 @@ export interface ScheduleConfig {
   scheduleEntries: ScheduleEntry[];
 }
 
+// User settings for channel customization
+export interface UserSettings {
+  channelSuffixes: Record<number, string>; // Channel index -> suffix mapping (e.g., {0: "Boom Bap", 1: "Lo-fi"})
+  updatedAt?: Date;
+}
+
 // Season-based system: 12 seasons x 40 days = 480 days total
 export const TOTAL_SEASONS = 12;
 export const DAYS_PER_SEASON = 40;
@@ -47,6 +53,8 @@ export function getSeason(dayNumber: number): Season {
   };
 }
 
-export function getChannelName(channelIndex: number): string {
-  return `C${channelIndex + 1}`;
+export function getChannelName(channelIndex: number, suffixes?: Record<number, string>): string {
+  const baseName = `C${channelIndex + 1}`;
+  const suffix = suffixes?.[channelIndex] || "";
+  return suffix ? `${baseName} - ${suffix}` : baseName;
 }

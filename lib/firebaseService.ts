@@ -9,10 +9,11 @@ import {
   serverTimestamp,
   onSnapshot
 } from 'firebase/firestore';
-import { ScheduleEntry, TOTAL_SEASONS } from '@/app/types';
+import { ScheduleEntry, TOTAL_SEASONS, UserSettings } from '@/app/types';
 
 const COLLECTION_NAME = 'schedules';
 const USER_PREFS_COLLECTION = 'userPreferences';
+const USER_SETTINGS_COLLECTION = 'userSettings';
 const DEFAULT_USER_ID = 'default-user'; // For now, using single user. Can add auth later.
 
 /**
@@ -277,6 +278,70 @@ export function subscribeToNavigationPrefs(
     }
   }, (error) => {
     console.error('Error subscribing to navigation preferences:', error);
+  });
+
+  return unsubscribe;
+}
+
+/**
+ * Load user settings from Firebase
+ */
+export async function loadUserSettings(): Promise<UserSettings> {
+  try {
+    const docRef = doc(db, USER_SETTINGS_COLLECTION, DEFAULT_USER_ID);
+    const docSnap = await getDoc(docRef);
+
+    if (docSnap.exists()) {
+      const data = docSnap.data();
+      return {
+        channelSuffixes: data.channelSuffixes || {},
+      };
+    }
+
+    // Return defaults if no settings exist
+    return { channelSuffixes: {} };
+  } catch (error) {
+    console.error('Error loading user settings:', error);
+    return { channelSuffixes: {} };
+  }
+}
+
+/**
+ * Save user settings to Firebase
+ */
+export async function saveUserSettings(settings: UserSettings): Promise<void> {
+  try {
+    const docRef = doc(db, USER_SETTINGS_COLLECTION, DEFAULT_USER_ID);
+    await setDoc(docRef, {
+      ...settings,
+      updatedAt: serverTimestamp(),
+    }, { merge: true });
+  } catch (error) {
+    console.error('Error saving user settings:', error);
+    throw error;
+  }
+}
+
+/**
+ * Subscribe to user settings changes (for real-time sync)
+ */
+export function subscribeToUserSettings(
+  callback: (settings: UserSettings) => void
+): () => void {
+  const docRef = doc(db, USER_SETTINGS_COLLECTION, DEFAULT_USER_ID);
+
+  const unsubscribe = onSnapshot(docRef, (docSnap) => {
+    if (docSnap.exists()) {
+      const data = docSnap.data();
+      callback({
+        channelSuffixes: data.channelSuffixes || {},
+      });
+    } else {
+      // If document doesn't exist, return default settings
+      callback({ channelSuffixes: {} });
+    }
+  }, (error) => {
+    console.error('Error subscribing to user settings:', error);
   });
 
   return unsubscribe;

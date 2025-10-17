@@ -6,11 +6,13 @@ import { useFirebaseNavigation } from '../hooks/useFirebaseNavigation';
 interface CalendarProps {
   scheduleEntries: ScheduleEntry[];
   onToggleComplete: (entryId: string) => void;
+  channelSuffixes?: Record<number, string>;
 }
 
 export default function Calendar({
   scheduleEntries,
   onToggleComplete,
+  channelSuffixes = {},
 }: CalendarProps) {
   const { currentDay, currentPage, setCurrentDay, setCurrentPage, isLoaded } = useFirebaseNavigation();
   const channelsPerPage = 12; // Display 12 channels per page
@@ -121,7 +123,7 @@ export default function Calendar({
             </h2>
             <p className="text-base text-gray-700">
               Season {season.seasonNumber} (Days {season.startDay}-{season.endDay}) •
-              Channels {getChannelName(season.startChannelIndex)}-{getChannelName(season.endChannelIndex)}
+              Channels {getChannelName(season.startChannelIndex, channelSuffixes)}-{getChannelName(season.endChannelIndex, channelSuffixes)}
             </p>
           </div>
           <div className="glass-bar flex gap-2 px-2">
@@ -163,7 +165,7 @@ export default function Calendar({
         <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-6 gap-3">
           {channelIndexes.map((channelIndex) => {
             const entry = getEntryForChannel(channelIndex);
-            const channelName = getChannelName(channelIndex);
+            const channelName = getChannelName(channelIndex, channelSuffixes);
 
             return (
               <div
