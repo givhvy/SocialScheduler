@@ -14,10 +14,10 @@ export function useFirebaseSettings() {
   const [error, setError] = useState<string | null>(null);
 
   // Debounce timer for saving
-  const saveTimerRef = useRef<NodeJS.Timeout>();
+  const saveTimerRef = useRef<NodeJS.Timeout | undefined>(undefined);
 
   // Track if we're currently syncing from Firebase to avoid loops
-  const isSyncingRef = useRef(false);
+  const isSyncingRef = useRef<boolean>(false);
 
   // Load initial settings
   useEffect(() => {
