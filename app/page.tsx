@@ -4,7 +4,7 @@ import { useEffect, useState } from 'react';
 import Calendar from './components/Calendar';
 import CountdownSection from './components/CountdownSection';
 import Settings from './components/Settings';
-import { TOTAL_SEASONS, DAYS_PER_SEASON, CHANNELS_PER_SEASON } from './types';
+import { TOTAL_SEASONS, DAYS_PER_SEASON, CHANNELS_PER_SEASON, formatDayDate } from './types';
 import { useFirebaseSchedule } from './hooks/useFirebaseSchedule';
 import { useFirebaseSettings } from './hooks/useFirebaseSettings';
 import { generateSeasonSchedule } from './utils/schedule';
@@ -32,6 +32,14 @@ export default function Home() {
   const totalChannels = TOTAL_SEASONS * CHANNELS_PER_SEASON;
   const completedEntries = scheduleEntries.filter(e => e.completed).length;
   const totalEntries = scheduleEntries.length;
+
+  // Find the furthest day with at least one completed entry
+  const furthestCompletedDay = scheduleEntries
+    .filter(e => e.completed)
+    .reduce((max, entry) => {
+      const day = parseInt(entry.date);
+      return day > max ? day : max;
+    }, 0);
 
   if (isLoading) {
     return (
@@ -90,7 +98,7 @@ export default function Home() {
         </header>
 
         {/* Stats Dashboard */}
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-6 mb-8">
           <div className="glass-card">
             <div className="text-base text-gray-600 mb-2">Total Days</div>
             <div className="text-5xl text-black mb-1">{totalDays}</div>
@@ -112,6 +120,15 @@ export default function Home() {
               {totalEntries > 0 ? Math.round((completedEntries / totalEntries) * 100) : 0}%
             </div>
             <div className="text-sm text-gray-500">overall completion</div>
+          </div>
+          <div className="glass-card">
+            <div className="text-base text-gray-600 mb-2">Furthest Day</div>
+            <div className="text-2xl text-black mb-1">
+              {furthestCompletedDay > 0 ? formatDayDate(furthestCompletedDay) : 'Chưa có'}
+            </div>
+            <div className="text-sm text-gray-500">
+              {furthestCompletedDay > 0 ? `Day ${furthestCompletedDay}` : 'No completions yet'}
+            </div>
           </div>
         </div>
 

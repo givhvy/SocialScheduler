@@ -29,6 +29,9 @@ export const TOTAL_SEASONS = 12;
 export const DAYS_PER_SEASON = 40;
 export const CHANNELS_PER_SEASON = 84;
 
+// Start date for the schedule (customize this to your needs)
+export const SCHEDULE_START_DATE = new Date('2025-11-08');
+
 export interface Season {
   seasonNumber: number; // 1-12
   startDay: number; // 1-480
@@ -57,4 +60,20 @@ export function getChannelName(channelIndex: number, suffixes?: Record<number, s
   const baseName = `C${channelIndex + 1}`;
   const suffix = suffixes?.[channelIndex] || "";
   return suffix ? `${baseName} - ${suffix}` : baseName;
+}
+
+// Convert day number (1-480) to actual date
+export function getDayDate(dayNumber: number): Date {
+  const date = new Date(SCHEDULE_START_DATE);
+  date.setDate(date.getDate() + (dayNumber - 1));
+  return date;
+}
+
+// Format date as "Ngày DD/MM/YYYY"
+export function formatDayDate(dayNumber: number): string {
+  const date = getDayDate(dayNumber);
+  const day = date.getDate().toString().padStart(2, '0');
+  const month = (date.getMonth() + 1).toString().padStart(2, '0');
+  const year = date.getFullYear();
+  return `Ngày ${day}/${month}/${year}`;
 }

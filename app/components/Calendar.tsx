@@ -1,6 +1,6 @@
 'use client';
 
-import { ScheduleEntry, getSeason, getChannelName, TOTAL_SEASONS, DAYS_PER_SEASON, CHANNELS_PER_SEASON } from '../types';
+import { ScheduleEntry, getSeason, getChannelName, formatDayDate, TOTAL_SEASONS, DAYS_PER_SEASON, CHANNELS_PER_SEASON } from '../types';
 import { useFirebaseNavigation } from '../hooks/useFirebaseNavigation';
 
 interface CalendarProps {
@@ -14,20 +14,13 @@ export default function Calendar({
   onToggleComplete,
   channelSuffixes = {},
 }: CalendarProps) {
-  const { currentDay, currentPage, setCurrentDay, setCurrentPage, isLoaded } = useFirebaseNavigation();
-  const channelsPerPage = 12; // Display 12 channels per page
+  const { currentDay, setCurrentDay, isLoaded } = useFirebaseNavigation();
 
   const season = getSeason(currentDay);
-  const allChannelIndexes = Array.from(
+  const channelIndexes = Array.from(
     { length: CHANNELS_PER_SEASON },
     (_, i) => season.startChannelIndex + i
   );
-
-  // Calculate pagination
-  const totalPages = Math.ceil(allChannelIndexes.length / channelsPerPage);
-  const startIndex = (currentPage - 1) * channelsPerPage;
-  const endIndex = startIndex + channelsPerPage;
-  const channelIndexes = allChannelIndexes.slice(startIndex, endIndex);
 
   const previousDay = () => {
     if (currentDay > 1) {
@@ -43,55 +36,6 @@ export default function Calendar({
 
   const goToDay = (day: number) => {
     setCurrentDay(day);
-    setCurrentPage(1); // Reset to first page when changing days
-  };
-
-  const previousPage = () => {
-    if (currentPage > 1) {
-      setCurrentPage(currentPage - 1);
-    }
-  };
-
-  const nextPage = () => {
-    if (currentPage < totalPages) {
-      setCurrentPage(currentPage + 1);
-    }
-  };
-
-  const goToPage = (page: number) => {
-    setCurrentPage(page);
-  };
-
-  // Generate page numbers to display (max 7 pages visible)
-  const getPageNumbers = () => {
-    const pages: number[] = [];
-    const maxVisible = 7;
-
-    if (totalPages <= maxVisible) {
-      // Show all pages
-      for (let i = 1; i <= totalPages; i++) {
-        pages.push(i);
-      }
-    } else {
-      // Show first page, last page, and pages around current page
-      if (currentPage <= 4) {
-        for (let i = 1; i <= 5; i++) pages.push(i);
-        pages.push(-1); // Ellipsis
-        pages.push(totalPages);
-      } else if (currentPage >= totalPages - 3) {
-        pages.push(1);
-        pages.push(-1); // Ellipsis
-        for (let i = totalPages - 4; i <= totalPages; i++) pages.push(i);
-      } else {
-        pages.push(1);
-        pages.push(-1); // Ellipsis
-        for (let i = currentPage - 1; i <= currentPage + 1; i++) pages.push(i);
-        pages.push(-1); // Ellipsis
-        pages.push(totalPages);
-      }
-    }
-
-    return pages;
   };
 
   const getEntryForChannel = (channelIndex: number): ScheduleEntry | undefined => {
@@ -119,10 +63,10 @@ export default function Calendar({
         <div className="flex justify-between items-center">
           <div>
             <h2 className="text-3xl text-black mb-1">
-              Day {currentDay} / {TOTAL_SEASONS * DAYS_PER_SEASON}
+              {formatDayDate(currentDay)}
             </h2>
             <p className="text-base text-gray-700">
-              Season {season.seasonNumber} (Days {season.startDay}-{season.endDay}) •
+              Season {season.seasonNumber} ({formatDayDate(season.startDay)} - {formatDayDate(season.endDay)}) •
               Channels {getChannelName(season.startChannelIndex, channelSuffixes)}-{getChannelName(season.endChannelIndex, channelSuffixes)}
             </p>
           </div>
@@ -131,7 +75,7 @@ export default function Calendar({
               onClick={previousDay}
               disabled={currentDay === 1}
               className="glass-btn !p-2 aspect-square disabled:opacity-30"
-              aria-label="Previous day"
+              aria-label="Ngày trước"
             >
               ←
             </button>
@@ -152,7 +96,7 @@ export default function Calendar({
               onClick={nextDay}
               disabled={currentDay === TOTAL_SEASONS * DAYS_PER_SEASON}
               className="glass-btn !p-2 aspect-square disabled:opacity-30"
-              aria-label="Next day"
+              aria-label="Ngày tiếp theo"
             >
               →
             </button>
@@ -188,51 +132,6 @@ export default function Calendar({
               </div>
             );
           })}
-        </div>
-
-        {/* Pagination Controls */}
-        <div className="flex justify-center items-center gap-2 mt-6 pt-4 border-t border-gray-200">
-          <button
-            onClick={previousPage}
-            disabled={currentPage === 1}
-            className="glass-btn !p-2 w-10 h-10 flex items-center justify-center disabled:opacity-30 disabled:cursor-not-allowed"
-            aria-label="Previous page"
-          >
-            ←
-          </button>
-
-          {getPageNumbers().map((page, index) => {
-            if (page === -1) {
-              return (
-                <span key={`ellipsis-${index}`} className="px-2 text-gray-500">
-                  ...
-                </span>
-              );
-            }
-
-            return (
-              <button
-                key={page}
-                onClick={() => goToPage(page)}
-                className={`glass-btn !p-2 w-10 h-10 flex items-center justify-center text-base transition-all ${
-                  currentPage === page
-                    ? '!bg-blue-600 !text-white ring-2 ring-blue-600'
-                    : 'hover:bg-gray-100'
-                }`}
-              >
-                {page}
-              </button>
-            );
-          })}
-
-          <button
-            onClick={nextPage}
-            disabled={currentPage === totalPages}
-            className="glass-btn !p-2 w-10 h-10 flex items-center justify-center disabled:opacity-30 disabled:cursor-not-allowed"
-            aria-label="Next page"
-          >
-            →
-          </button>
         </div>
       </div>
 

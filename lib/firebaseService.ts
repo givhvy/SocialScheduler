@@ -212,6 +212,38 @@ export async function updateSingleEntry(
 }
 
 /**
+ * Update multiple entries efficiently (batched by season)
+ * This is optimized for updating many entries at once
+ */
+export async function updateMultipleEntries(
+  entriesToUpdate: ScheduleEntry[],
+  allEntries: ScheduleEntry[]
+): Promise<void> {
+  // Create a map of entry IDs to update
+  const updateMap = new Map(entriesToUpdate.map(e => [e.id, e]));
+
+  // Update entries in memory
+  const updatedEntries = allEntries.map(e =>
+    updateMap.has(e.id) ? updateMap.get(e.id)! : e
+  );
+
+  // Group updated entries by season
+  const affectedSeasons = new Set(
+    entriesToUpdate.map(e => getSeasonFromEntryId(e.id))
+  );
+
+  // Save each affected season
+  const savePromises = Array.from(affectedSeasons).map(seasonNum => {
+    const seasonEntries = updatedEntries.filter(e =>
+      getSeasonFromEntryId(e.id) === seasonNum
+    );
+    return saveSingleSeason(seasonNum, seasonEntries);
+  });
+
+  await Promise.all(savePromises);
+}
+
+/**
  * User navigation preferences interface
  */
 export interface UserNavigationPrefs {
@@ -256,6 +288,18 @@ export async function saveNavigationPrefs(prefs: UserNavigationPrefs): Promise<v
     }, { merge: true }); // Use merge to only update changed fields
   } catch (error) {
     console.error('Error saving navigation preferences:', error);
+    throw error;
+  }
+}
+
+/**
+ * Reset navigation to day 1, season 1
+ */
+export async function resetNavigationToStart(): Promise<void> {
+  try {
+    await saveNavigationPrefs({ currentDay: 1, currentPage: 1 });
+  } catch (error) {
+    console.error('Error resetting navigation:', error);
     throw error;
   }
 }

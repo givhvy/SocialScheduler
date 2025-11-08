@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef } from 'react';
 import { ScheduleEntry } from '../types';
-import { loadScheduleEntries, saveScheduleEntries, updateSingleEntry, subscribeToAllSeasons } from '@/lib/firebaseService';
+import { loadScheduleEntries, saveScheduleEntries, updateSingleEntry, updateMultipleEntries, subscribeToAllSeasons } from '@/lib/firebaseService';
 
 export function useFirebaseSchedule() {
   const [scheduleEntries, setScheduleEntries] = useState<ScheduleEntry[]>([]);
@@ -62,20 +62,43 @@ export function useFirebaseSchedule() {
     }
   };
 
-  // Toggle single entry (optimized - saves only 1 season)
+  // Toggle single entry (optimized - saves only affected seasons)
   const toggleEntry = async (entryId: string) => {
     const entry = scheduleEntries.find(e => e.id === entryId);
     if (!entry) return;
 
+    const newCompletedStatus = !entry.completed;
+    const currentDay = parseInt(entry.date);
+
     try {
+      // Collect entries that will be updated
+      const entriesToUpdate: ScheduleEntry[] = [];
+
+      // Always update the clicked entry
+      entriesToUpdate.push({ ...entry, completed: newCompletedStatus });
+
+      // If marking as completed, also mark all previous days of the same channel as completed
+      if (newCompletedStatus) {
+        const channelId = entry.channelId;
+        scheduleEntries.forEach(e => {
+          const entryDay = parseInt(e.date);
+          // Mark as completed if it's the same channel, on a previous day, and not already completed
+          if (e.channelId === channelId && entryDay < currentDay && !e.completed) {
+            entriesToUpdate.push({ ...e, completed: true });
+          }
+        });
+      }
+
       // Optimistic update (for immediate UI feedback)
+      const updateMap = new Map(entriesToUpdate.map(e => [e.id, e]));
       const optimisticEntries = scheduleEntries.map(e =>
-        e.id === entryId ? { ...e, completed: !e.completed } : e
+        updateMap.has(e.id) ? updateMap.get(e.id)! : e
       );
       setScheduleEntries(optimisticEntries);
 
-      // Save only affected season (real-time listener will update all clients)
-      await updateSingleEntry(entryId, !entry.completed, scheduleEntries);
+      // Save only affected entries to Firebase (batched by season)
+      await updateMultipleEntries(entriesToUpdate, scheduleEntries);
+      console.log(`✅ Updated ${entriesToUpdate.length} entries`);
       // Note: We don't manually update state here because the real-time listener will do it
     } catch (err) {
       // Rollback on error
